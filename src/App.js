@@ -11,20 +11,27 @@ const getRandomCoordinates = () => {
   return [x, y];
 };
 
+const initialState = {
+  food: getRandomCoordinates(),
+  speed: 100,
+  direction: 'RIGHT',
+  snakeDots: [
+    [0, 0],
+    [2, 0],
+  ],
+};
+
 class App extends React.Component {
-  state = {
-    food: getRandomCoordinates(),
-    speed: 200,
-    direction: 'RIGHT',
-    snakeDots: [
-      [0, 0],
-      [2, 0],
-    ],
-  };
+  state = initialState;
 
   componentDidMount() {
     setInterval(this.moveSnake, this.state.speed);
     document.onkeydown = this.onKeyDown;
+  }
+  componentDidUpdate() {
+    this.checkBorders();
+    this.checkCollapsed();
+    this.checkEat();
   }
   onKeyDown = (e) => {
     e = e || window.event;
@@ -69,12 +76,66 @@ class App extends React.Component {
     });
   };
 
+  checkBorders() {
+    let head = this.state.snakeDots[this.state.snakeDots.length - 1];
+    if (head[0] >= 100 || head[1] >= 100 || head[0] < 0 || head[1] < 0) {
+      this.gameOver();
+    }
+  }
+
+  checkCollapsed() {
+    let snake = [...this.state.snakeDots];
+    let head = snake[snake.length - 1];
+    snake.pop();
+    snake.forEach((dot) => {
+      if (head[0] == dot[0] && head[1] == dot[1]) {
+        this.gameOver();
+      }
+    });
+  }
+
+  checkEat() {
+    let head = this.state.snakeDots[this.state.snakeDots.length - 1];
+    let food = this.state.food;
+    if (head[0] == food[0] && head[1] == food[1]) {
+      this.setState({
+        food: getRandomCoordinates(),
+      });
+      this.largeSnake();
+      this.increaseSpeed();
+    }
+  }
+
+  largeSnake() {
+    let newSnake = [...this.state.snakeDots];
+    newSnake.unshift([]);
+    this.setState({
+      snakeDots: newSnake,
+    });
+  }
+
+  increaseSpeed() {
+    if (this.state.speed > 10) {
+      this.setState({
+        speed: this.state.speed - 100,
+      });
+    }
+  }
+
+  gameOver() {
+    alert(`Game over. Snake length is ${this.state.snakeDots.length}`);
+    this.setState(initialState);
+  }
+
   render() {
     return (
-      <div className='game-area'>
-        <Snake snakeDots={this.state.snakeDots} />
-        <Food dot={this.state.food} />
-      </div>
+      <React.Fragment>
+        <h1>React Snake Game</h1>
+        <div className='game-area'>
+          <Snake snakeDots={this.state.snakeDots} />
+          <Food dot={this.state.food} />
+        </div>
+      </React.Fragment>
     );
   }
 }
